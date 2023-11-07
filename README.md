@@ -24,3 +24,5 @@ NPM scripts:
 | `npm run typecheck` | Type check using the TypeScript compiler.                                                                                                                                       |
 | `npm run format`    | Format using Prettier (also recommended: the [Prettier VS Code extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) if you're using VS code.) |
 | `npm run build`     | Build JavaScript into the `dist/` directory. You normally shouldn't need this if you're using `npm start`.                                                                      |
+
+This package uses [Ink](https://github.com/vadimdemedes/ink) and it emits ESM outputs. [Why?](https://github.com/vadimdemedes/ink/pull/553#issuecomment-1464867958) [How?](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-make-my-typescript-project-output-esm)
