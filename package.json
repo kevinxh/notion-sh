@@ -2,24 +2,40 @@
   "name": "notion-sh",
   "version": "0.0.1",
   "description": "",
-  "main": "dist/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": "./dist/index.js",
+  "type": "module",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node src/index.ts",
+    "start": "ts-node --esm src/index.tsx",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "format": "prettier --write src/**/*.ts"
   },
-  "keywords": [],
+  "keywords": [
+    "shell",
+    "bash",
+    "zsh",
+    "script",
+    "notion"
+  ],
   "author": "",
   "dependencies": {
     "@notionhq/client": "^2.2.2",
-    "dotenv": "^16.0.1"
+    "dotenv": "^16.0.1",
+    "ink": "^4.4.1",
+    "react": "^18.2.0"
   },
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
     "@types/node": "^18.0.3",
+    "@types/react": "^18.2.36",
     "prettier": "^2.7.1",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4"
