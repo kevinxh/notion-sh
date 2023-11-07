@@ -8,9 +8,19 @@ async function main() {
     auth: process.env.NOTION_TOKEN,
   });
 
-  const response = await notion.databases.query({
-    database_id: "FIXME",
-  });
+  const pageId = "0cba7fa4d6da4aec920e942522a184fb";
+
+  const response = await notion.pages.retrieve({ page_id: pageId });
+  // const response = await notion.databases.retrieve({ database_id: databaseId });
+  // const response = await notion.search({
+  //   query: "notion-sh",
+  //   filter: {
+  //     value: "database",
+  //     property: "object",
+  //   },
+  // });
+
+  // const response = await notion.databases.query();
 
   console.log("Got response:", response);
 }

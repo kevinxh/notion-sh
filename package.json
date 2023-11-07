@@ -1,6 +1,6 @@
 {
-  "name": "notion-sdk-project",
-  "version": "1.0.0",
+  "name": "notion-sh",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/index.js",
   "private": true,
