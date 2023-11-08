@@ -29,7 +29,7 @@
   "dependencies": {
     "@notionhq/client": "^2.2.2",
     "chalk": "^5.3.0",
-    "dotenv": "^16.0.1",
+    "dotenv": "^16.3.1",
     "enquirer": "^2.4.1",
     "ink": "^4.4.1",
     "ink-spinner": "^5.0.0",
