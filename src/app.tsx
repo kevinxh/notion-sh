@@ -2,9 +2,12 @@ import process from "node:process";
 import React, { useEffect, useState } from "react";
 import { Client } from "@notionhq/client";
 import { useQuery } from "react-query";
-import { useStdout, Box, Text } from "ink";
+import { useStdout, Box, Text, Static } from "ink";
 import Spinner from "ink-spinner";
 import chalk from "chalk";
+import Enquirer from "enquirer";
+// @ts-ignore
+const { AutoComplete } = Enquirer;
 
 type Props = {
   token: string | undefined;
@@ -103,14 +106,30 @@ export default function App({ token }: Props) {
     enabled: !!rootPageId,
   });
 
+  useEffect(() => {
+    if (scripts.isFetched && scripts.data?.length) {
+      const prompt = new AutoComplete({
+        name: "flavor",
+        message: "Pick your favorite flavor",
+        limit: 10,
+        initial: 2,
+        choices: scripts.data.map((script: any) =>
+          script.__NOTION_SH_PARENT_TITLES.join(" ")
+        ),
+      });
+      prompt.run().then((answer: any) => console.log("Answer:", answer));
+    }
+  }, [scripts.data]);
+
   return (
     <Box flexDirection="column">
       {/* @ts-ignore */}
-      <Text scripts={scripts.data}>
+      <Text>
         {root.isLoading && <Spinner type="dots" />}
         {root.isSuccess && <Text color="green">✅</Text>}
         <Text color="green">Loading scripts from notion database...</Text>
       </Text>
+      <Static items={["123", "456"]}>{(item) => <Text>{item}</Text>}</Static>
     </Box>
   );
 }
