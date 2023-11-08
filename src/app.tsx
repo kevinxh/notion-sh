@@ -25,18 +25,40 @@ const getRoot = async (notion: Client) => {
 const recursivelyFetchAllScripts: any = async (
   block: any,
   notion: Client,
-  scripts: Array<object>
+  scripts: Array<object>,
+  parents: any
 ) => {
   if (block.type === "code") {
-    scripts.push(block);
+    scripts.push({
+      ...block,
+      __NOTION_SH_PARENT: parents,
+      __NOTION_SH_PARENT_IDS: parents.map(({ id }: any) => id),
+      __NOTION_SH_PARENT_TITLES: parents.map(
+        ({ child_page }: any) => child_page.title
+      ),
+    });
     return;
+  }
+
+  if (block.parent.type === "workspace" && block.object === "page") {
+    // This is the root page, initialize the parent
+    // chain, so we can keep track of a chain of parents for every leaf.
+    // the relationship structure looks like
+    // [grand grandparent, grandparent, parent] in decending order.
+    // This parent is added as the "__NOTION_SH_PARENT" property to the leaf.
+    // This array always contain blocks with type: "child_page"
+    parents = [];
+  }
+
+  if (block.type === "child_page") {
+    parents = [...parents, block];
   }
 
   if (block.object === "page" || block.type === "child_page") {
     const response = await notion.blocks.children.list({ block_id: block.id });
     return Promise.all(
       response.results.map((result: any) =>
-        recursivelyFetchAllScripts(result, notion, scripts)
+        recursivelyFetchAllScripts(result, notion, scripts, parents)
       )
     );
   }
@@ -56,12 +78,10 @@ export default function App({ token }: Props) {
     enabled: !!rootPageId,
   });
 
-  console.log("render");
-  console.log(scripts.data);
-
   return (
     <Box flexDirection="column">
-      <Text>
+      {/* @ts-ignore */}
+      <Text scripts={scripts.data}>
         {root.isLoading && <Spinner type="dots" />}
         {root.isSuccess && <Text color="green">✅</Text>}
         <Text color="green">Loading scripts from notion database...</Text>
