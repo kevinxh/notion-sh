@@ -1,8 +1,10 @@
+import process from "node:process";
 import React, { useEffect, useState } from "react";
 import { Client } from "@notionhq/client";
 import { useQuery } from "react-query";
-import { Box, Text } from "ink";
+import { useStdout, Box, Text } from "ink";
 import Spinner from "ink-spinner";
+import chalk from "chalk";
 
 type Props = {
   token: string | undefined;
@@ -64,9 +66,32 @@ const recursivelyFetchAllScripts: any = async (
   }
 };
 
+const exit = (code: number, stdout: NodeJS.WriteStream, message: string) => {
+  if (code > 0) {
+    stdout.write(chalk.red(message));
+  } else {
+    stdout.write(message);
+  }
+  process.exit(code);
+};
+
 export default function App({ token }: Props) {
   const notion = new Client({ auth: token });
-  const root = useQuery({ queryKey: ["root"], queryFn: () => getRoot(notion) });
+  const { stdout } = useStdout();
+  const root = useQuery({
+    queryKey: ["root"],
+    queryFn: async () => {
+      const root = await getRoot(notion);
+      if (!root || !root.id) {
+        exit(
+          1,
+          stdout,
+          'You must create a page "notion-sh" for this tool to work.'
+        );
+      }
+      return root;
+    },
+  });
   const rootPageId = root.data?.id;
   const scripts = useQuery({
     queryKey: ["scripts"],
@@ -86,11 +111,6 @@ export default function App({ token }: Props) {
         {root.isSuccess && <Text color="green">✅</Text>}
         <Text color="green">Loading scripts from notion database...</Text>
       </Text>
-      {!rootPageId && (
-        <Text color="red">
-          You must create a page call "notion-sh" for this tool to work.
-        </Text>
-      )}
     </Box>
   );
 }
