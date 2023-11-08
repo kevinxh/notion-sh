@@ -1,51 +1,75 @@
 {
-  "name": "notion-sh",
-  "version": "0.0.1",
-  "description": "",
+  "author": "Kevin He @kevinxh",
+  "bin": {
+    "notionsh": "./bin/run.js"
+  },
+  "dependencies": {
+    "@oclif/core": "^3",
+    "@oclif/plugin-help": "^5",
+    "@oclif/plugin-plugins": "^4"
+  },
+  "description": "A shell script manager built on Notion.",
+  "devDependencies": {
+    "@oclif/prettier-config": "^0.2.1",
+    "@oclif/test": "^3",
+    "@types/chai": "^4",
+    "@types/mocha": "^10",
+    "@types/node": "^18",
+    "chai": "^4",
+    "eslint": "^8",
+    "eslint-config-oclif": "^5",
+    "eslint-config-oclif-typescript": "^3",
+    "eslint-config-prettier": "^9.0.0",
+    "mocha": "^10",
+    "oclif": "^4.0.3",
+    "shx": "^0.3.4",
+    "ts-node": "^10.9.1",
+    "typescript": "^5"
+  },
   "engines": {
-    "node": ">=18"
+    "node": ">=18.0.0"
   },
   "files": [
-    "dist"
+    "/bin",
+    "/dist",
+    "/oclif.manifest.json"
   ],
-  "exports": "./dist/index.js",
-  "type": "module",
-  "private": true,
+  "homepage": "https://github.com/kevinxh/notion-sh",
+  "license": "MIT",
+  "main": "",
+  "name": "notion-sh",
+  "oclif": {
+    "bin": "notionsh",
+    "dirname": "notionsh",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "hello": {
+        "description": "Say hello to the world and others"
+      }
+    }
+  },
+  "repository": "kevinxh/notion-sh",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node --esm src/index.tsx",
-    "typecheck": "tsc --noEmit",
-    "build": "tsc",
-    "format": "prettier --write src/**/*.ts"
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint . --ext .ts",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "npm run lint",
+    "prepack": "npm run build && oclif manifest && oclif readme",
+    "prepare": "npm run build",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif readme && git add README.md"
   },
+  "version": "0.0.0",
+  "bugs": "https://github.com/kevinxh/notion-sh/issues",
   "keywords": [
-    "shell",
-    "bash",
-    "zsh",
-    "script",
-    "notion"
+    "oclif"
   ],
-  "author": "",
-  "dependencies": {
-    "@notionhq/client": "^2.2.2",
-    "chalk": "^5.3.0",
-    "dotenv": "^16.0.1",
-    "enquirer": "^2.4.1",
-    "ink": "^4.4.1",
-    "ink-spinner": "^5.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-query": "^3.39.3",
-    "yargs": "^17.7.2"
-  },
-  "devDependencies": {
-    "@types/dotenv": "^8.2.0",
-    "@types/node": "^18.0.3",
-    "@types/react": "^18.2.36",
-    "@types/yargs": "^17.0.30",
-    "prettier": "^2.7.1",
-    "react-devtools-core": "^4.28.5",
-    "ts-node": "^10.8.2",
-    "typescript": "^4.7.4"
-  }
+  "types": "dist/index.d.ts",
+  "exports": "./lib/index.js",
+  "type": "module"
 }
