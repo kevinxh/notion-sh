@@ -9,57 +9,56 @@ type Props = {
 };
 
 const getRoot = async (notion: Client) => {
-  return await notion.search({
-    query: "notion-sh",
-    filter: {
-      // you can either search "page" or "database"
-      // here we assume that user have created a root page called "notion-sh"
-      value: "page",
-      property: "object",
-    },
-  });
+  return (
+    await notion.search({
+      query: "notion-sh",
+      filter: {
+        // you can either search "page" or "database"
+        // here we assume that user have created a root page called "notion-sh"
+        value: "page",
+        property: "object",
+      },
+    })
+  ).results[0];
 };
 
-const getPageById = async (notion: Client, pageId: string) => {
-  //   return await notion.pages.retrieve({ page_id: pageId });
-  return await notion.blocks.children.list({
-    block_id: pageId,
-    page_size: 100,
-  });
-};
+const recursivelyFetchAllScripts: any = async (
+  block: any,
+  notion: Client,
+  scripts: Array<object>
+) => {
+  if (block.type === "code") {
+    scripts.push(block);
+    return;
+  }
 
-const getBlockDetail = async (notion: Client, blockId: string) => {
-  //   return await notion.pages.retrieve({ page_id: pageId });
-  return await notion.blocks.retrieve({
-    block_id: blockId,
-  });
+  if (block.object === "page" || block.type === "child_page") {
+    const response = await notion.blocks.children.list({ block_id: block.id });
+    return Promise.all(
+      response.results.map((result: any) =>
+        recursivelyFetchAllScripts(result, notion, scripts)
+      )
+    );
+  }
 };
 
 export default function App({ token }: Props) {
   const notion = new Client({ auth: token });
   const root = useQuery({ queryKey: ["root"], queryFn: () => getRoot(notion) });
-  const rootPageId = root.data?.results?.[0]?.id;
-  const page = useQuery({
-    queryKey: ["page", rootPageId],
+  const rootPageId = root.data?.id;
+  const scripts = useQuery({
+    queryKey: ["scripts"],
+    queryFn: async () => {
+      const results: Array<object> = [];
+      await recursivelyFetchAllScripts(root.data, notion, results);
+      return results;
+    },
     enabled: !!rootPageId,
-    queryFn: () => getPageById(notion, rootPageId!),
-  });
-  const scriptPageId = page.data?.results[0].id;
-  const scriptPage = useQuery({
-    queryKey: ["page", scriptPageId],
-    enabled: !!scriptPageId,
-    queryFn: () => getPageById(notion, scriptPageId!),
-  });
-  const codePageId = scriptPage.data?.results[0].id;
-  const code = useQuery({
-    queryKey: ["page", codePageId],
-    enabled: !!codePageId,
-    queryFn: () => getBlockDetail(notion, codePageId!),
   });
 
-  // @ts-ignore
-  console.log(scriptPage.data?.results[0].code);
-  //   console.log(JSON.stringify(code.data));
+  console.log("render");
+  console.log(scripts.data);
+
   return (
     <Box flexDirection="column">
       <Text>
@@ -67,7 +66,7 @@ export default function App({ token }: Props) {
         {root.isSuccess && <Text color="green">✅</Text>}
         <Text color="green">Loading scripts from notion database...</Text>
       </Text>
-      {root.data?.results?.length === 0 && (
+      {!rootPageId && (
         <Text color="red">
           You must create a page call "notion-sh" for this tool to work.
         </Text>
