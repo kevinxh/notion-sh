@@ -43,7 +43,7 @@
   "homepage": "https://github.com/kevinxh/notion-sh",
   "license": "MIT",
   "main": "",
-  "name": "notion-sh",
+  "name": "notionsh",
   "oclif": {
     "bin": "notionsh",
     "dirname": "notionsh",
