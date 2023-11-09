@@ -136,7 +136,9 @@ export default class Run extends Command {
       name: 'script',
       message: 'Execute ->',
       limit: 10,
-      choices: results.codeBlocksArr.map((script: CodeBlockObject) => script.__NOTION_SH_PARENT_COMMAND),
+      choices: results.codeBlocksArr
+        .sort((a, b) => (new Date(a.last_edited_time) < new Date(b.last_edited_time) ? 1 : -1))
+        .map((script: CodeBlockObject) => script.__NOTION_SH_PARENT_COMMAND),
     })
     const answer = await prompt.run()
 
