@@ -4,15 +4,15 @@
       {
           "type": "node",
           "request": "launch",
-          "name": "Execute Command",
+          "name": "notionsh run",
           "skipFiles": [
               "<node_internals>/**"
           ],
-          "program": "${workspaceFolder}/bin/dev.js",
-          "args": [
-            "hello",
-            "world",
-          ],
+          "cwd": "${workspaceFolder}",
+          "runtimeExecutable": "npm",
+          "runtimeArgs": [
+            "start",
+        ]
       }
   ]
 }
