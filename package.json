@@ -10,6 +10,7 @@
     "@oclif/plugin-plugins": "^4",
     "enquirer": "^2.4.1",
     "listr": "^0.14.3",
+    "ora": "^7.0.1",
     "tslog": "^4.9.2"
   },
   "description": "A shell script manager built on Notion.",

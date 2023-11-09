@@ -1,9 +1,9 @@
 import {spawn} from 'node:child_process'
 import {Client} from '@notionhq/client'
 import {Command} from '@oclif/core'
-import Listr from 'listr'
 import {Logger} from 'tslog'
 import Enquirer from 'enquirer'
+import {oraPromise} from 'ora'
 // @ts-ignore
 const {AutoComplete} = Enquirer
 
@@ -127,27 +127,20 @@ export default class Run extends Command {
     }
 
     const notion = new Client({auth: token})
-    const tasks = new Listr([
-      {
-        async task(context) {
-          const {codeBlocksArr, codeBlocksMap} = await fetchAllScripts({notion})
-          context.codeBlocksArr = codeBlocksArr
-          context.codeBlocksMap = codeBlocksMap
-        },
-        title: 'Loading scripts from your notion...',
-      },
-    ])
-
-    const results = await tasks.run()
+    const results = await oraPromise(fetchAllScripts({notion}), {
+      text: 'Loading scripts from your Notion pages...',
+    })
     logger.debug(`Successfully fetched ${results.codeBlocksArr.length} scripts!`)
 
     const prompt = new AutoComplete({
       name: 'script',
-      message: 'Select:',
+      message: 'Execute ->',
       limit: 10,
       choices: results.codeBlocksArr.map((script: CodeBlockObject) => script.__NOTION_SH_PARENT_COMMAND),
     })
     const answer = await prompt.run()
+
+    // @ts-ignore
     spawn(results.codeBlocksMap[answer].__NOTION_SH_PARENT_CONTENT, {
       shell: true,
       cwd: process.cwd(),
