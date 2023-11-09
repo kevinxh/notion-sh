@@ -1,7 +1,11 @@
+import {spawn} from 'node:child_process'
 import {Client} from '@notionhq/client'
 import {Command} from '@oclif/core'
 import Listr from 'listr'
 import {Logger} from 'tslog'
+import Enquirer from 'enquirer'
+// @ts-ignore
+const {AutoComplete} = Enquirer
 
 import type {
   ChildPageBlockObjectResponse,
@@ -14,10 +18,12 @@ import type {
   DatabaseObjectResponse,
 } from '../types.ts'
 
-const logger = new Logger({name: 'notion-sh', type: 'pretty'})
+const logger = new Logger({name: 'notion-sh', type: process.env.NOTION_SH_DEBUG ? 'pretty' : 'hidden'})
 
 interface CodeBlockObject extends CodeBlockObjectResponse {
   __NOTION_SH_PARENT: ChildPageBlockObjectResponse[] | undefined
+  __NOTION_SH_PARENT_COMMAND: string
+  __NOTION_SH_PARENT_CONTENT: string
   __NOTION_SH_PARENT_IDS: string[]
   __NOTION_SH_PARENT_TITLES: string[]
 }
@@ -32,18 +38,28 @@ const recursivelyFetchAllCodeBlocks = async (
     | DatabaseObjectResponse,
   notion: Client,
   codeBlocks: CodeBlockObject[],
+  codeBlocksMap: Record<string, CodeBlockObject>,
   parents?: ChildPageBlockObjectResponse[] | undefined,
 ): Promise<CodeBlockObject[] | undefined> => {
   const isPage = block.object === 'page'
   const isBlock = block.object === 'block'
   const isChildPage = isBlock && 'type' in block && block.type === 'child_page'
   if (isBlock && 'type' in block && block.type === 'code') {
-    codeBlocks.push({
+    const __NOTION_SH_PARENT = parents
+    const __NOTION_SH_PARENT_IDS = parents!.map(({id}) => id)
+    const __NOTION_SH_PARENT_TITLES = parents!.map(({child_page}) => child_page.title)
+    const __NOTION_SH_PARENT_COMMAND = parents!.map(({child_page}) => child_page.title).join(' ')
+    const __NOTION_SH_PARENT_CONTENT = block.code.rich_text[0].plain_text
+    const codeBlock = {
       ...block,
-      __NOTION_SH_PARENT: parents,
-      __NOTION_SH_PARENT_IDS: parents!.map(({id}) => id),
-      __NOTION_SH_PARENT_TITLES: parents!.map(({child_page}) => child_page.title),
-    })
+      __NOTION_SH_PARENT,
+      __NOTION_SH_PARENT_IDS,
+      __NOTION_SH_PARENT_TITLES,
+      __NOTION_SH_PARENT_COMMAND,
+      __NOTION_SH_PARENT_CONTENT,
+    }
+    codeBlocks.push(codeBlock)
+    codeBlocksMap[__NOTION_SH_PARENT_COMMAND] = codeBlock
   }
 
   if (isPage && 'parent' in block && block.parent.type === 'workspace') {
@@ -65,7 +81,9 @@ const recursivelyFetchAllCodeBlocks = async (
 
     // @ts-ignore
     return Promise.all(
-      response.results.map((result) => recursivelyFetchAllCodeBlocks(result, notion, codeBlocks, parents)),
+      response.results.map((result) =>
+        recursivelyFetchAllCodeBlocks(result, notion, codeBlocks, codeBlocksMap, parents),
+      ),
     )
   }
 }
@@ -81,7 +99,6 @@ const fetchAllScripts = async ({notion}: {notion: Client}) => {
     },
     query: 'notion-sh',
   })
-  logger.debug('searchResult', searchResult)
 
   if (searchResult.results.length === 0) {
     throw new Error('No script found. Please create a page called "notion-sh"')
@@ -89,10 +106,14 @@ const fetchAllScripts = async ({notion}: {notion: Client}) => {
 
   const rootPage = searchResult.results[0]
 
-  const results: CodeBlockObject[] = []
-  await recursivelyFetchAllCodeBlocks(rootPage, notion, results)
-  logger.debug('results.length', results.length)
-  return results
+  const codeBlocksArr: CodeBlockObject[] = []
+  const codeBlocksMap = {}
+  await recursivelyFetchAllCodeBlocks(rootPage, notion, codeBlocksArr, codeBlocksMap)
+  logger.debug('results.length', codeBlocksArr.length)
+  return {
+    codeBlocksArr,
+    codeBlocksMap,
+  }
 }
 
 export default class Run extends Command {
@@ -108,13 +129,30 @@ export default class Run extends Command {
     const notion = new Client({auth: token})
     const tasks = new Listr([
       {
-        async task() {
-          return fetchAllScripts({notion})
+        async task(context) {
+          const {codeBlocksArr, codeBlocksMap} = await fetchAllScripts({notion})
+          context.codeBlocksArr = codeBlocksArr
+          context.codeBlocksMap = codeBlocksMap
         },
         title: 'Loading scripts from your notion...',
       },
     ])
 
-    await tasks.run()
+    const results = await tasks.run()
+    logger.debug(`Successfully fetched ${results.codeBlocksArr.length} scripts!`)
+
+    const prompt = new AutoComplete({
+      name: 'script',
+      message: 'Select:',
+      limit: 10,
+      choices: results.codeBlocksArr.map((script: CodeBlockObject) => script.__NOTION_SH_PARENT_COMMAND),
+    })
+    const answer = await prompt.run()
+    spawn(results.codeBlocksMap[answer].__NOTION_SH_PARENT_CONTENT, {
+      shell: true,
+      cwd: process.cwd(),
+      detached: true,
+      stdio: 'inherit',
+    })
   }
 }
