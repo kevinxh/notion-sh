@@ -7,6 +7,7 @@ Organize your shell scripts in Notion and run your scripts from anywhere.
 # Table of Content
 
 - [Getting Started](#getting-started)
+- [Command Structure](#command-structure)
 - [Usage](#usage)
 - [Commands](#commands)
 <!-- tocstop -->
@@ -54,6 +55,10 @@ Select a script to execute:
 - xxx
 - xxx
 ...
+
+# Or run a command directly
+$ npx notionsh run COMMAND
+...
 ```
 
 <!-- usagestop -->
@@ -71,5 +76,5 @@ Fetch your script from Notion and execute it.
 ```
 USAGE
   $ notionsh run
-
+  $ notionsh run COMMAND
 ```
