@@ -129,17 +129,6 @@ export default class Run extends Command {
     }),
   }
 
-  // TODO: to be fixed
-  static flags = {
-    flags: Flags.string({
-      char: 'f', // shorter flag version
-      summary: 'Flags to be passed thru to command', // help summary for flag
-      hidden: false, // hide from help
-      multiple: true, // allow setting this flag multiple times
-      required: false, // make flag required
-    }),
-  }
-
   static delimiter = ' '
 
   public async run(): Promise<void> {
@@ -154,12 +143,10 @@ export default class Run extends Command {
     })
     logger.debug(`Successfully fetched ${results.codeBlocksArr.length} scripts!`)
 
-    const {argv, flags} = await this.parse(Run)
+    const {argv} = await this.parse(Run)
     logger.debug('argv', argv)
-    logger.debug('flags', flags)
 
     let command = argv.join(Run.delimiter)
-    const {flags: f} = flags
 
     if (!command) {
       // if no command is provided, show a list of all commands
@@ -175,11 +162,9 @@ export default class Run extends Command {
     }
 
     logger.debug('command', command)
-    logger.debug('argv0', f?.map((flag) => `--${flag}`).join(' '))
     spawn(
       // @ts-ignore
       results.codeBlocksMap[command].__NOTION_SH_PARENT_CONTENT,
-      f?.map((flag) => `--${flag}`) || [],
       {
         shell: true,
         cwd: process.cwd(),
