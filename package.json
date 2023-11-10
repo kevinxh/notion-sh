@@ -74,7 +74,11 @@
   "version": "0.0.1",
   "bugs": "https://github.com/kevinxh/notion-sh/issues",
   "keywords": [
-    "oclif"
+    "oclif",
+    "notion",
+    "script",
+    "script manager",
+    "shell script"
   ],
   "types": "dist/index.d.ts",
   "exports": "./lib/index.js",
