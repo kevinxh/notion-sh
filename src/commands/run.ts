@@ -1,6 +1,6 @@
 import {spawn} from 'node:child_process'
 import {Client} from '@notionhq/client'
-import {Command} from '@oclif/core'
+import {Command, Args, Flags} from '@oclif/core'
 import {Logger} from 'tslog'
 import Enquirer from 'enquirer'
 import {oraPromise} from 'ora'
@@ -119,6 +119,28 @@ const fetchAllScripts = async ({notion}: {notion: Client}) => {
 export default class Run extends Command {
   static description = 'describe the command here'
   static examples = ['<%= config.bin %> <%= command.id %>']
+  static strict = false
+  static args = {
+    command: Args.string({
+      name: 'command', // name of arg to show in help and reference with args[name]
+      required: false, // make the arg required with `required: true`
+      description: 'The command name (your Notion page name)',
+      hidden: false, // hide this arg from help
+    }),
+  }
+
+  // TODO: to be fixed
+  static flags = {
+    flags: Flags.string({
+      char: 'f', // shorter flag version
+      summary: 'Flags to be passed thru to command', // help summary for flag
+      hidden: false, // hide from help
+      multiple: true, // allow setting this flag multiple times
+      required: false, // make flag required
+    }),
+  }
+
+  static delimiter = ' '
 
   public async run(): Promise<void> {
     const token = process.env.NOTION_TOKEN
@@ -132,22 +154,37 @@ export default class Run extends Command {
     })
     logger.debug(`Successfully fetched ${results.codeBlocksArr.length} scripts!`)
 
-    const prompt = new AutoComplete({
-      name: 'script',
-      message: 'Execute ->',
-      limit: 10,
-      choices: results.codeBlocksArr
-        .sort((a, b) => (new Date(a.last_edited_time) < new Date(b.last_edited_time) ? 1 : -1))
-        .map((script: CodeBlockObject) => script.__NOTION_SH_PARENT_COMMAND),
-    })
-    const answer = await prompt.run()
+    const {argv, flags} = await this.parse(Run)
+    logger.debug('argv', argv)
+    logger.debug('flags', flags)
 
-    // @ts-ignore
-    spawn(results.codeBlocksMap[answer].__NOTION_SH_PARENT_CONTENT, {
-      shell: true,
-      cwd: process.cwd(),
-      detached: true,
-      stdio: 'inherit',
-    })
+    let command = argv.join(Run.delimiter)
+    const {flags: f} = flags
+
+    if (!command) {
+      // if no command is provided, show a list of all commands
+      const prompt = new AutoComplete({
+        name: 'script',
+        message: 'Execute ->',
+        limit: 10,
+        choices: results.codeBlocksArr
+          .sort((a, b) => (new Date(a.last_edited_time) < new Date(b.last_edited_time) ? 1 : -1))
+          .map((script: CodeBlockObject) => script.__NOTION_SH_PARENT_COMMAND),
+      })
+      command = await prompt.run()
+    }
+
+    logger.debug('command', command)
+    logger.debug('argv0', f?.map((flag) => `--${flag}`).join(' '))
+    spawn(
+      // @ts-ignore
+      results.codeBlocksMap[command].__NOTION_SH_PARENT_CONTENT,
+      f?.map((flag) => `--${flag}`) || [],
+      {
+        shell: true,
+        cwd: process.cwd(),
+        stdio: 'inherit',
+      },
+    )
   }
 }

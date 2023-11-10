@@ -7,6 +7,7 @@
     "perfectionist/sort-union-types": "off",
     "perfectionist/sort-named-imports": "off",
     "perfectionist/sort-imports": "off",
+    "perfectionist/sort-classes": "off",
     "unicorn/no-useless-promise-resolve-reject": "off",
     "unicorn/prefer-module": "off",
     "@typescript-eslint/ban-ts-comment": "off"
